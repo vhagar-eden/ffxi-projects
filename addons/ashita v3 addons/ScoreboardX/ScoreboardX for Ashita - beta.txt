@@ -1,0 +1,29 @@
+**Scoreboard --> ScoreboardX for Ashita v3**
+
+Core Functionality -
+
+✅ Fixed DPS clock behavior → now starts on first actual damage dealt by party/alliance, and pauses if no damage is dealt for 5+ seconds.
+✅ Added robust pet-owner mapping so pet damage always credits to the owner, even if the owner hasn’t dealt direct damage yet.
+✅ Implemented ID-based solution for skillchains so SC damage is attributed to the closing player, not left as its own entry.
+✅ Unified damage merging system → totals now always combine (Player + Pet + SC).
+
+Display & Reporting -
+
+✅ Reformatted damage report from one-line with commas → multi-line output, one player per line.
+✅ Added damage breakdown in reports → (P:XX + Pet:XX + SC:XX) with percentage totals.
+✅ Fixed display so pets and SC entities no longer appear as separate names (e.g., Skillchain(Vha.) or pet abbreviations).
+✅ Updated report_stat output → each entry prints on its own line instead of one wrapped string.
+
+Quality of Life & Usability -
+
+✅ Changed report title/header → "Total Damage Breakdown -" instead of "Dmg:".
+✅ Cleaned up percentage formatting → removed redundant parentheses around %.
+✅ Ensured reportstats still works and can show pets separately when needed.
+✅ Tested and confirmed merged totals still calculate correctly across display and reporting.
+
+Addon Identity -
+
+✅ Renamed addon to ScoreboardX to keep it separate from the original.
+✅ Updated folder name, main .lua file, and command alias → new commands are /sbx.
+
+*All updates made by Vhagar @ EdenXI Private Server. This beta version of ScoreboardX is still in testing/development. Please send any feedback to Vhagar/Visenya on Eden Discord.
