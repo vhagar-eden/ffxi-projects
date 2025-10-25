@@ -1,0 +1,99 @@
+07:00:23:153 [17260] | INFO  | Initializing crosire's ReShade version '4.9.1.1002' (32-bit) built on '2021-01-09 21:10:30' loaded from "C:\Games\EdenXI\Windower\DXGI.DLL" into "C:\Games\EdenXI\Windower\edenxi.exe" ...
+07:00:23:207 [17260] | INFO  | Registering hooks for "user32.dll" ...
+07:00:23:208 [17260] | INFO  | > Libraries loaded.
+07:00:23:209 [17260] | INFO  | > Found 14 match(es). Installing ...
+07:00:23:269 [17260] | INFO  | Registering hooks for "ws2_32.dll" ...
+07:00:23:269 [17260] | INFO  | > Libraries loaded.
+07:00:23:269 [17260] | INFO  | > Found 8 match(es). Installing ...
+07:00:23:313 [17260] | INFO  | Registering hooks for "C:\WINDOWS\system32\d2d1.dll" ...
+07:00:23:313 [17260] | INFO  | > Delayed.
+07:00:23:313 [17260] | INFO  | Registering hooks for "C:\WINDOWS\system32\d3d9.dll" ...
+07:00:23:314 [17260] | INFO  | > Delayed.
+07:00:23:314 [17260] | INFO  | Registering hooks for "C:\WINDOWS\system32\d3d10.dll" ...
+07:00:23:314 [17260] | INFO  | > Delayed.
+07:00:23:314 [17260] | INFO  | Registering hooks for "C:\WINDOWS\system32\d3d10_1.dll" ...
+07:00:23:315 [17260] | INFO  | > Delayed.
+07:00:23:315 [17260] | INFO  | Registering hooks for "C:\WINDOWS\system32\d3d11.dll" ...
+07:00:23:315 [17260] | INFO  | > Delayed.
+07:00:23:315 [17260] | INFO  | Registering hooks for "C:\WINDOWS\system32\d3d12.dll" ...
+07:00:23:316 [17260] | INFO  | > Delayed.
+07:00:23:316 [17260] | INFO  | Registering hooks for "C:\WINDOWS\system32\dxgi.dll" ...
+07:00:23:316 [17260] | INFO  | > Delayed until first call to an exported function.
+07:00:23:316 [17260] | INFO  | Registering hooks for "C:\WINDOWS\system32\opengl32.dll" ...
+07:00:23:317 [17260] | INFO  | > Delayed.
+07:00:23:317 [17260] | INFO  | Initialized.
+07:00:23:318 [17260] | INFO  | Installing delayed hooks for "C:\WINDOWS\system32\d3d11.dll" (Just loaded via LoadLibrary("D3D11.DLL")) ...
+07:00:23:318 [17260] | INFO  | > Found 2 match(es). Installing ...
+07:00:23:364 [17260] | INFO  | Redirecting RegisterClassExA(lpWndClassEx = 012FD990 { DGD3D11ROOT }) ...
+07:00:23:365 [17260] | INFO  | > Adding 'CS_OWNDC' window class style flag to 'DGD3D11ROOT'.
+07:00:23:365 [17260] | INFO  | Redirecting CreateDXGIFactory1(riid = {770AAE78-F26F-4DBA-A829-253C83D1B387}, ppFactory = 06A72188) ...
+07:00:23:368 [17260] | INFO  | Installing export hooks for "C:\WINDOWS\system32\dxgi.dll" ...
+07:00:23:368 [17260] | INFO  | > Found 5 match(es). Installing ...
+07:00:23:373 [17260] | INFO  | Redirecting CreateDXGIFactory1(riid = {770AAE78-F26F-4DBA-A829-253C83D1B387}, ppFactory = 012FD9C0) ...
+07:00:23:385 [17260] | INFO  | Redirecting D3D11CreateDevice(pAdapter = 0CC5F3B8, DriverType = 0, Software = 00000000, Flags = 0, pFeatureLevels = 61E9898C, FeatureLevels = 3, SDKVersion = 7, ppDevice = 06A723A0, pFeatureLevel = 06A723B0, ppImmediateContext = 06A723A4) ...
+07:00:23:386 [17260] | INFO  | > Passing on to D3D11CreateDeviceAndSwapChain:
+07:00:23:386 [17260] | INFO  | Redirecting D3D11CreateDeviceAndSwapChain(pAdapter = 0CC5F3B8, DriverType = 0, Software = 00000000, Flags = 0, pFeatureLevels = 61E9898C, FeatureLevels = 3, SDKVersion = 7, pSwapChainDesc = 00000000, ppSwapChain = 00000000, ppDevice = 06A723A0, pFeatureLevel = 06A723B0, ppImmediateContext = 06A723A4) ...
+07:00:23:579 [08360] | WARN  | Ignoring LoadLibrary("api-ms-win-appmodel-runtime-l1-1-2") call to avoid possible deadlock.
+07:00:23:579 [06440] | WARN  | Ignoring LoadLibrary("api-ms-win-appmodel-runtime-l1-1-2") call to avoid possible deadlock.
+07:00:23:579 [15292] | WARN  | Ignoring LoadLibrary("api-ms-win-appmodel-runtime-l1-1-2") call to avoid possible deadlock.
+07:00:23:611 [17260] | INFO  | > Using feature level 0xb000.
+07:00:23:723 [17260] | INFO  | Redirecting IDXGIFactory::CreateSwapChain(this = 06A6CA90, pDevice = 0D1E31C8, pDesc = 012FD678, ppSwapChain = 06A873B0) ...
+07:00:23:724 [17260] | INFO  | > Dumping swap chain description:
+07:00:23:724 [17260] | INFO  |   +-----------------------------------------+-----------------------------------------+
+07:00:23:724 [17260] | INFO  |   | Parameter                               | Value                                   |
+07:00:23:725 [17260] | INFO  |   +-----------------------------------------+-----------------------------------------+
+07:00:23:725 [17260] | INFO  |   | Width                                   | 1                                       |
+07:00:23:725 [17260] | INFO  |   | Height                                  | 1                                       |
+07:00:23:726 [17260] | INFO  |   | RefreshRate                             | 0                   1                   |
+07:00:23:726 [17260] | INFO  |   | Format                                  | DXGI_FORMAT_R8G8B8A8_UNORM              |
+07:00:23:726 [17260] | INFO  |   | ScanlineOrdering                        | 0                                       |
+07:00:23:726 [17260] | INFO  |   | Scaling                                 | 0                                       |
+07:00:23:727 [17260] | INFO  |   | SampleCount                             | 1                                       |
+07:00:23:727 [17260] | INFO  |   | SampleQuality                           | 0                                       |
+07:00:23:727 [17260] | INFO  |   | BufferUsage                             | 0x60                                    |
+07:00:23:727 [17260] | INFO  |   | BufferCount                             | 2                                       |
+07:00:23:728 [17260] | INFO  |   | OutputWindow                            | 0064006E                                |
+07:00:23:728 [17260] | INFO  |   | Windowed                                | TRUE                                    |
+07:00:23:728 [17260] | INFO  |   | SwapEffect                              | 0                                       |
+07:00:23:728 [17260] | INFO  |   | Flags                                   | 0x2                                     |
+07:00:23:728 [17260] | INFO  |   +-----------------------------------------+-----------------------------------------+
+07:00:23:946 [17260] | INFO  | Running on NVIDIA GeForce GTX 1070
+07:00:23:951 [17260] | INFO  | Recreated runtime environment on runtime 12579AF8.
+07:00:23:952 [17260] | INFO  | Redirecting IDXGISwapChain::SetFullscreenState(this = 018682E0, Fullscreen = FALSE, pTarget = 00000000) ...
+07:00:23:952 [17260] | INFO  | Destroyed runtime environment on runtime 12579AF8.
+07:00:23:952 [17260] | INFO  | Redirecting IDXGIFactory::CreateSwapChain(this = 06A6CA90, pDevice = 0D1E31C8, pDesc = 012FD684, ppSwapChain = 06A873B0) ...
+07:00:23:953 [17260] | INFO  | > Dumping swap chain description:
+07:00:23:953 [17260] | INFO  |   +-----------------------------------------+-----------------------------------------+
+07:00:23:953 [17260] | INFO  |   | Parameter                               | Value                                   |
+07:00:23:953 [17260] | INFO  |   +-----------------------------------------+-----------------------------------------+
+07:00:23:953 [17260] | INFO  |   | Width                                   | 1920                                    |
+07:00:23:953 [17260] | INFO  |   | Height                                  | 1080                                    |
+07:00:23:954 [17260] | INFO  |   | RefreshRate                             | 120                 1                   |
+07:00:23:955 [17260] | INFO  |   | Format                                  | DXGI_FORMAT_R8G8B8A8_UNORM              |
+07:00:23:955 [17260] | INFO  |   | ScanlineOrdering                        | 0                                       |
+07:00:23:955 [17260] | INFO  |   | Scaling                                 | 0                                       |
+07:00:23:955 [17260] | INFO  |   | SampleCount                             | 1                                       |
+07:00:23:955 [17260] | INFO  |   | SampleQuality                           | 0                                       |
+07:00:23:955 [17260] | INFO  |   | BufferUsage                             | 0x60                                    |
+07:00:23:955 [17260] | INFO  |   | BufferCount                             | 2                                       |
+07:00:23:955 [17260] | INFO  |   | OutputWindow                            | 0064006E                                |
+07:00:23:955 [17260] | INFO  |   | Windowed                                | TRUE                                    |
+07:00:23:956 [17260] | INFO  |   | SwapEffect                              | 0                                       |
+07:00:23:956 [17260] | INFO  |   | Flags                                   | 0x2                                     |
+07:00:23:956 [17260] | INFO  |   +-----------------------------------------+-----------------------------------------+
+07:00:24:107 [17260] | INFO  | Running on NVIDIA GeForce GTX 1070
+07:00:24:111 [17260] | INFO  | Recreated runtime environment on runtime 12579AF8.
+07:00:24:112 [17260] | INFO  | Redirecting IDXGISwapChain::SetFullscreenState(this = 12601D78, Fullscreen = FALSE, pTarget = 00000000) ...
+07:00:25:992 [15124] | INFO  | Successfully loaded "C:\Games\EdenXI\Windower\reshade-shaders\Shaders\Levels.fx".
+07:00:25:993 [14060] | INFO  | Successfully loaded "C:\Games\EdenXI\Windower\reshade-shaders\Shaders\LUT.fx".
+07:00:25:993 [12128] | INFO  | Successfully loaded "C:\Games\EdenXI\Windower\reshade-shaders\Shaders\Deband.fx".
+07:00:25:993 [11624] | INFO  | Successfully loaded "C:\Games\EdenXI\Windower\reshade-shaders\Shaders\DisplayDepth.fx".
+07:00:25:993 [09220] | INFO  | Successfully loaded "C:\Games\EdenXI\Windower\reshade-shaders\Shaders\UIMask.fx".
+07:00:25:995 [08380] | INFO  | Successfully loaded "C:\Games\EdenXI\Windower\reshade-shaders\Shaders\Vibrance.fx".
+07:00:25:998 [15124] | INFO  | Successfully loaded "C:\Games\EdenXI\Windower\reshade-shaders\Shaders\LumaSharpen.fx".
+07:00:25:999 [01176] | INFO  | Successfully loaded "C:\Games\EdenXI\Windower\reshade-shaders\Shaders\Clarity.fx".
+07:00:26:001 [01176] | INFO  | Successfully loaded "C:\Games\EdenXI\Windower\reshade-shaders\Shaders\Daltonize.fx".
+07:00:26:207 [17260] | INFO  | Loading image files for textures ...
+07:01:59:680 [17260] | INFO  | Exiting ...
+07:01:59:684 [17260] | INFO  | Uninstalling 37 hook(s) ...
+07:02:00:780 [17260] | INFO  | Finished exiting.
