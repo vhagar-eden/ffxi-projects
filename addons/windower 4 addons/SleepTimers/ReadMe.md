@@ -70,6 +70,6 @@ Add support for BLU and COR abilities:
 - Yawn  
 - Soporific
 
-### Download
+## Download
 
 You can download this addon from my releases page here - https://github.com/vhagar-eden/ffxi-projects/releases/tag/SleepTimers_v1.34_Windower
