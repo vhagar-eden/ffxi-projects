@@ -19,6 +19,6 @@ This addon is based on the original Scoreboard for Windower and Ashita. I took t
 
 <img width="608" height="149" alt="Desktop Screenshot 2025 09 09 - 18 18 25 22" src="https://github.com/user-attachments/assets/b37ed239-749d-4f45-82d7-30799b39471e" />
 
-### Download:
+## Download:
 
 You can download this addon from my releases page here - https://github.com/vhagar-eden/ffxi-projects/releases/tag/ScoreboardX_v2.0_Windower
