@@ -7,8 +7,8 @@
 * Shows all items currently in the treasure pool
 * Automatically updates when items drop, are lotted, or distributed
 * Drag the display anywhere — position is saved automatically
-* Simple `//lua load Spoils` command to get started
 * Minimal resource usage and clean, readable layout
+* Simply type `//lua load Spoils` in game to load the addon
 
 ### 📁 Installation
 
@@ -22,6 +22,17 @@
    ```
    //lua load Spoils
    ```
+3. Autoload the addon by adding this line:
+
+   ```
+   lua load Spoils
+   ```
+
+   to your `init.txt` file located at:
+
+   ```
+   Windower/scripts/init.txt
+   ```
 
 ### ⚙️ Settings
 
@@ -34,4 +45,3 @@ Windower/addons/Spoils/settings/position.lua
 ### 💬 Commands
 
 * `//spoils clear` — manually clear the display (if needed)
-* The addon runs automatically; no setup required
