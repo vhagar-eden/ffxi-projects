@@ -26,7 +26,8 @@ Uses the modified icons of FFXIView of this version: https://github.com/KenshiDR
 ```
 //pb|partybuffs debug on|off
 ```
-## Vhagar's Eden Patch
+
+# Vhagar's Eden Patch
 
 ### Fixes:
 
