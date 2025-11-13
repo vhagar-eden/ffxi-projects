@@ -5,7 +5,7 @@ Welcome to my repository containing all of my FFXI projects pertaining to Eden S
 ## Addons
 
 Inside my addons folder you'll find all my custom addons as well as fixed or upgraded versions of addons, sorted for Ashita and Windower in their respective folders. Use this to browse my addons, look at the readme's, look through the code, etc.
-If you want to download any of my addons, you can find a download link to the most recent versions on the Releases page, or click the tags tab to browse by tag.
+If you want to download any of my addons, you can find a download link to the most recent versions on my [Releases page](https://github.com/vhagar-eden/ffxi-projects/releases), or click the tags tab to browse by tag.
 
 ## Ashitacast XMLs
 
