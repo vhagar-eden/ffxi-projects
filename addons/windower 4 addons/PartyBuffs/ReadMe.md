@@ -53,3 +53,6 @@ Also added sorting options within sorting.lua file found in the addon folder. In
 <img width="271" height="195" alt="Desktop Screenshot 2025 09 04 - 01 25 02 85" src="https://github.com/user-attachments/assets/01941ddb-3d36-4cf1-ad65-bcc07c970fe5" />
 <img width="309" height="89" alt="Desktop Screenshot 2025 09 04 - 11 46 36 38" src="https://github.com/user-attachments/assets/68a3d13a-f76b-4439-8952-7660eab64fb7" />
 
+## Download
+
+You can download the latest release of this addon here - https://github.com/vhagar-eden/ffxi-projects/releases/tag/PartyBuffs_v3.7_Windower
