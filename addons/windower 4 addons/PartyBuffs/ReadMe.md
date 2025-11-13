@@ -4,7 +4,7 @@ Shows party members buffs icons without the necesity of targetting. (Doesn't wor
 
 Uses the modified icons of FFXIView of this version: https://github.com/KenshiDRK/XiView
 
-Commands:
+## Commands:
 ```
 //pb|partybuffs help (show a list of available commands)
 ```
@@ -30,19 +30,17 @@ Commands:
 
 ### Fixes:
 
-> Fixed issue with PartyBuffs not auto-loading properly.
-
-> Fixed issues with PartyBuffs not working correctly after zoning, joining new parties, changing party members, etc.
-
-> PartyBuffs now autoloads properly and never needs to be manually reloaded in order to work. It also handles zoning, and will update new parties, and new members of parties automatically.
+- Fixed issue with PartyBuffs not auto-loading properly.
+- Fixed issues with PartyBuffs not working correctly after zoning, joining new parties, changing party members, etc.
+- PartyBuffs now autoloads properly and never needs to be manually reloaded in order to work. It also handles zoning, and will update new parties, and new members of parties automatically.
 
 ### New Features:
 
-> PartyBuffs now tracks your own buffs/debuffs and displays them along with your party!
+- PartyBuffs now tracks your own buffs/debuffs and displays them along with your party!
+- PartyBuffs now works even when playing solo and displays your buffs/debuffs next to your name!
+- Buff Sorting added! You can now customize the order that buffs appear in the new sorting.lua file!
 
-> PartyBuffs now works even when playing solo and displays your buffs/debuffs next to your name!
-
-> Buff Sorting added! You can now customize the order that buffs appear in the new sorting.lua file!
+### Description:
 
 I added some features that I felt were missing from the addon. Previously, the addon only tracked and displayed other party members buffs/debuffs, but not your own. Now it shows your own buffs/debuffs using the same filters and sorting as other party members. It also works when playing solo and automatically adjusts position accordingly. If you want to turn this feature off you can use - //partybuffs self on|off to toggle it on and off as you wish.
 
