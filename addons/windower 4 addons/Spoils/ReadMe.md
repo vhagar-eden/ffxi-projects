@@ -33,5 +33,5 @@ Windower/addons/Spoils/settings/position.lua
 
 ### 💬 Commands
 
-* `//tp clear` — manually clear the display (if needed)
+* `//spoils clear` — manually clear the display (if needed)
 * The addon runs automatically; no setup required
