@@ -7,7 +7,7 @@
 * Shows all items currently in the treasure pool
 * Automatically updates when items drop, are lotted, or distributed
 * Drag the display anywhere — position is saved automatically
-* Simple `/lua load Spoils` command to get started
+* Simple `//lua load Spoils` command to get started
 * Minimal resource usage and clean, readable layout
 
 ### 📁 Installation
