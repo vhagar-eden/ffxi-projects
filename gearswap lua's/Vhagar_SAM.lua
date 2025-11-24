@@ -1478,10 +1478,21 @@ end
 -------============♣  JOB-SPECIFIC KEYBINDS  ♣============------- [Load job keybinds]
 
 function job_keybinds()
-	-- uses the execute command to load our job keybinds inside a txt file located at: Windower/scripts/vhagar_sam_keybinds.txt
+    -- Bind Samurai mode cycle keys directly here
+    send_command('bind !f1 gs c cycle_mode sixhit')
+    send_command('bind !f2 gs c cycle_mode fivehit')
+    send_command('bind !f3 gs c cycle_mode polearm')
+
+    -- Load the rest of your job specific keybinds from the external txt file located in Windower/scripts/name_of_file.txt
     send_command('exec vhagar_sam_keybinds.txt')
 end
 
+-- Unload our samurai mode keybinds when we unload this file or switch to another job.
+function file_unload()
+    send_command('unbind !f1')
+    send_command('unbind !f2')
+    send_command('unbind !f3')
+end
 -------============♣  PRERENDER LEVEL CHECK  ♣============------- [Rebuild sets when level changes]
 
 current_level = player.main_job_level
