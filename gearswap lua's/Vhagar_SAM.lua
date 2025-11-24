@@ -1717,7 +1717,7 @@ function equip_idle()
             set = set_combine(set, {right_ring = "Fire Ring"})
         end
         equip(set)
-		--return
+		return
     end
 	
     -- If we're not in a defined "Safe Zone" then - Prefer mode-specific idle variant, fallback to generic sets.idle
