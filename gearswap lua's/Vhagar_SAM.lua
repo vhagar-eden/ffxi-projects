@@ -1,4 +1,71 @@
 -------------------------------------------------------------------------------------------------------
+--  Samurai Gearswap Lua - EdenXI (75 Cap)
+--  Author: Vhagar (EdenXI)
+--  Version: 1.0
+--
+--  DESCRIPTION:
+--      This is a custom Samurai GearSwap Lua designed specifically for Samurai on the EdenXI private
+--      server. It includes deep support for level-syncing, Store TP modes, conditional food system, time/day
+--      checks, and WS conditional overlays. This Lua was built for reliability even when zoning,
+--      dying, or swapping weapons at low sync levels.
+--
+--  MAJOR FEATURES:
+--      • Multiple Samurai Modes:
+--          - sixhit
+--          - fivehit
+--          - polearm
+--
+--      • Conditional Food System:
+--          Toggle that cycles conditional foods per Samurai Mode.
+--
+--      • Level Sync Logic:
+--          Gear sets rebuild dynamically whenever your main job level changes.
+--
+--      • Auto-Loading Job Keybinds:
+--          Automatically executes Windower/scripts/name_of_file.txt
+--
+--      • Day/Time Elemental Checks:
+--          Automatically equips Lightning Ring, Fire Ring, Fenrir's Earring, Vampire Earring, etc.,
+--          based on day element or time of day.
+--
+--      • Death / Raise Handling:
+--          Automatically prevents swaps when dead, and refreshes gear sets after being raised to prevent GearSwap lock-ups.
+--
+--      • Zoning Logic:
+--          Automatically refreshes sets after zoning to avoid broken gear references.
+--
+--      • Sleep & Paralysis Handling:
+--          Auto equips Berserker's Torque to wake you, and Flagellant's Rope while paralyzed.
+--
+--      • Samurai Roll Logic:
+--          Automatically switches to power TP and power WS sets when Samurai Roll is active.
+--
+--      • Built-in HUD:
+--          Displays current Samurai Mode + Conditional Food in real time using texts.lua.
+--
+--      • Idle / Engaged Decision Engine:
+--          Includes safe-zone detection, mode-specific variants, weapon-first equip logic,
+--          and overlays for day/time/buff checks.
+--
+--  COMMANDS:
+--      Use via: Keybinds
+--
+--      • ALT+F1 = cycle_mode sixhit
+--      • ALT+F2 = cycle_mode fivehit
+--      • ALT+F3 = cycle_mode polearm
+--          - First press switches to that mode.
+--          - Pressing it again cycles the conditional food for that mode.
+--
+--      Internal automated commands (you normally never trigger these manually):
+--          • zone_refresh
+--          • raise_refresh
+--          • finish_pending_equip
+--
+--  IMPORTANT NOTES:
+--      • All gear sets are organized by level brackets (40–75) for clean level sync behavior.
+-------------------------------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------------------------------
 --                                       SAM Mode HUD                                                --
 --                       Track your current Samurai Mode and display it                              --
 -------------------------------------------------------------------------------------------------------
