@@ -14,6 +14,7 @@
 --          - sixhit
 --          - fivehit
 --          - polearm
+--			- pdt
 --
 --      • Conditional Food System:
 --          Toggle that cycles conditional foods per Samurai Mode.
@@ -55,6 +56,7 @@
 --      • ALT+F3 = cycle_mode polearm
 --          - First press switches to that mode.
 --          - Pressing it again cycles the conditional food for that mode.
+--		• ` = toggle PDT mode on/off (immediately switches in/out of defensive set)
 --
 --      Internal automated commands (you normally never trigger these manually):
 --          • zone_refresh
@@ -64,6 +66,8 @@
 --  IMPORTANT NOTES:
 --      • All gear sets are organized by level brackets (40–75) for clean level sync behavior.
 -------------------------------------------------------------------------------------------------------
+
+
 
 -------------------------------------------------------------------------------------------------------
 --                                       SAM Mode HUD                                                --
@@ -78,6 +82,8 @@ texts = require('texts')
  
  -- Track engaged mode: 'fivehit', 'sixhit', 'polearm'
 sam_mode = 'sixhit'
+pdt_mode = false
+pending_equip = nil
 
 -- Food state per mode: 'none' | 'carbonara' | 'riceball'
 food_state = {
@@ -86,8 +92,6 @@ food_state = {
     polearm = 'none'
 }
 food_cycle = {'none','carbonara','riceball'} -- cycle order
-
-pending_equip = nil
 
  -------============♣  Samurai Mode HUD  ♣============------- [Define Samurai Modes]
 
@@ -101,13 +105,26 @@ hud = texts.new({
 
 function update_hud()
     local mode_text = ''
+
+    -- Samurai Mode
     if sam_mode then
         mode_text = mode_text .. 'Samurai Mode: ' .. sam_mode .. '\n'
     end
+
+    -- Food
     mode_text = mode_text .. 'Conditional Food: ' .. (food_state[sam_mode] or 'none') .. '\n'
+
+    -- PDT Mode line with GREEN/RED color
+    if pdt_mode then
+        mode_text = mode_text .. 'PDT: \\cs(0,255,0)True\\cs(255,255,255)\n'
+    else
+        mode_text = mode_text .. 'PDT: \\cs(255,0,0)False\\cs(255,255,255)\n'
+    end
+
     hud:text(mode_text)
     hud:show()
 end
+
 
 update_hud()
 
@@ -1432,6 +1449,21 @@ update_hud()
 				right_ring="Jelly Ring",
 				back="Cerb. Mantle +1",
 			}
+			sets.pdt = {							-- Minus Physical Damage Taken %, Emergency Defense Engaged Set, do not include main/sub
+				ammo="Olibanum Sachet",
+				head="Arh. Jinpachi +1",
+				body="Arhat's Gi +1",
+				hands="Rasetsu Tekko",
+				legs="Gavial Cuisses",
+				feet="Gavial Greaves",
+				neck="Ritter Gorget",
+				waist="Scouter's Rope",
+				left_ear="Ethereal Earring",
+				right_ear="Elusive Earring",
+				left_ring="Jelly Ring",
+				right_ring="Phalanx Ring",
+				back="Boxer's Mantle",
+			}
 			sets.city = {							-- Prioritize this idle set when in a city or any defined "safe zone"
 				ammo="Tiphia Sting",
 				head="Arh. Jinpachi +1",
@@ -1482,6 +1514,7 @@ function job_keybinds()
     send_command('bind !f1 gs c cycle_mode sixhit')
     send_command('bind !f2 gs c cycle_mode fivehit')
     send_command('bind !f3 gs c cycle_mode polearm')
+	send_command('bind ` gs c toggle_pdt')
 
     -- Load the rest of your job specific keybinds from the external txt file located in Windower/scripts/name_of_file.txt
     send_command('exec vhagar_sam_keybinds.txt')
@@ -1492,7 +1525,9 @@ function file_unload()
     send_command('unbind !f1')
     send_command('unbind !f2')
     send_command('unbind !f3')
+	send_command('unbind `')
 end
+
 -------============♣  PRERENDER LEVEL CHECK  ♣============------- [Rebuild sets when level changes]
 
 current_level = player.main_job_level
@@ -1566,6 +1601,20 @@ function self_command(command)
 			pending_equip = nil
 		end
 	end
+	-- PDT toggle command
+	if cmd == 'toggle_pdt' then
+		pdt_mode = not pdt_mode
+
+		if pdt_mode then
+			windower.add_to_chat(122, 'PDT Mode: ON')
+		else
+			windower.add_to_chat(122, 'PDT Mode: OFF')
+		end
+		choose_set()
+		update_hud()
+		return
+	end
+
 	
 	-- Samurai Mode command
     local mode = cmd:match('^cycle_mode%s+(%w+)$')
@@ -1717,8 +1766,15 @@ function equip_idle()
             set = set_combine(set, {right_ring = "Fire Ring"})
         end
         equip(set)
-		return
+		--return
     end
+	
+	-- Prioritize our emergency defensive set if PDT mode is on
+	if pdt_mode == true then
+		local set = set_combine(sets.idle[sam_mode], sets.pdt)
+		equip(set)
+		return
+	end
 	
     -- If we're not in a defined "Safe Zone" then - Prefer mode-specific idle variant, fallback to generic sets.idle
     local base_idle
@@ -1757,15 +1813,18 @@ function equip_idle()
     equip(base_idle)
 end
 
-
 -------============♣  EQUIP ENGAGED  ♣============------- [Equip Function]
 
 -- Handles what gear we wear while engaged.
 function equip_engaged()
     local engaged_set
 	
+	-- if our PDT mode is active, prioritize our defense set
+	if pdt_mode == true then
+		engaged_set = set_combine(sets.engaged[sam_mode], sets.pdt)
+	
 	-- if we have samurai roll active, assume we have enough store TP and equip our power set
-    if buffactive['Samurai Roll'] then
+    elseif buffactive['Samurai Roll'] then
 		engaged_set = sets.engaged.power or sets.engaged
 	
 	-- else check for store tp mode and use that set
