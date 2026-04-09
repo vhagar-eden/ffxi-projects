@@ -109,15 +109,16 @@ function Display:build_scoreboard_header()
     if self.db:empty() then
         labels = '\n'
     else
-        labels = ('%23s%7s%9s\n'):format('Tot', 'Pct', 'DPS')
+        if not self.settings.display_mode or self.settings.display_mode == 'damage' then
+            labels = ('%23s%7s%9s\n'):format('Tot', 'Pct', 'DPS')
+        else
+            local meta = Display.stat_summaries._all_stats[self.settings.display_mode]
+            local stat_name = (meta and meta.name) or self.settings.display_mode:upper()
+            labels = ('%23s%7s%9s    %-18s\n'):format('Tot', 'Pct', 'DPS', stat_name)
+        end
     end
 
-    local dps_status
-    if dps_clock:is_active() then
-        dps_status = 'Active'
-    else
-        dps_status = 'Paused'
-    end
+    local dps_status = dps_clock:is_active() and 'Active' or 'Paused'
 
     local dps_clock_str = ''
     if dps_clock:is_active() or dps_clock.clock > 1 then
@@ -126,7 +127,12 @@ function Display:build_scoreboard_header()
 
     local dps_chunk = ('DPS: %s%s'):format(dps_status, dps_clock_str)
 
-    return ('%s%s\nMobs: %-9s\n%s'):format(dps_chunk, (' '):rep(29 - dps_chunk:len()) .. '/sbx help', mob_filter_str, labels)
+    return ('%s%s\nMobs: %-9s\n%s'):format(
+        dps_chunk,
+        (' '):rep(29 - dps_chunk:len()) .. '/sbx help',
+        mob_filter_str,
+        labels
+    )
 end
 
 
@@ -149,6 +155,38 @@ local function match_owner_by_prefix(player_totals, prefix)
         end
     end
     return best_match
+end
+
+-- Helper: find the stat entry for a player name within a stat map returned by query_stat().
+-- Stats map: stats[name] = { value, samples }
+-- We attempt:
+--  1) exact key match
+--  2) case-insensitive match
+--  3) prefix-match (player short name vs stat key)
+local function lookup_stat_for_player(player_name, stats_map)
+    if not player_name or not stats_map then return nil end
+
+    -- exact
+    if stats_map[player_name] then return stats_map[player_name] end
+
+    -- case-insensitive exact
+    local lname = player_name:lower()
+    for k, v in pairs(stats_map) do
+        if k:lower() == lname then return v end
+    end
+
+    -- prefix match (try short prefixes), prefer longer matches
+    local best_k, best_v, best_len = nil, nil, 0
+    for k, v in pairs(stats_map) do
+        local k_l = k:lower()
+        if k_l:sub(1, #lname) == lname or lname:sub(1, #k_l) == k_l then
+            if #k_l > best_len then
+                best_k, best_v, best_len = k, v, #k_l
+            end
+        end
+    end
+
+    return best_v -- may be nil
 end
 
 
@@ -180,99 +218,98 @@ function Display:get_sorted_player_damage()
                     owner = self.db:get_owner_for_pet(player_name)
                 end
 
-                if owner then
-                    -- attribute to owner's pet bucket immediately
-                    local t = player_totals[owner] or { total = 0, p = 0, pet = 0, sc = 0 }
-                    t.pet = t.pet + player.damage
-                    t.total = t.total + player.damage
-                    player_totals[owner] = t
-                    total_damage = total_damage + player.damage
-                else
-                    -- If name looks like pet suffix (e.g. "Ifrit (Vis.)"), stash for later
-                    local owner_short = player_name:match('%(([%a%d]+)%.%)$') -- "Vis" from "(Vis.)"
-                    if owner_short then
-                        pet_entries[#pet_entries + 1] = { name = player_name, damage = player.damage, owner_short = owner_short }
-                        total_damage = total_damage + player.damage
-                    else
-                        -- Direct player damage (or "Pets" literal when combined): attribute to p
-                        local pname = player_name
-                        local t = player_totals[pname] or { total = 0, p = 0, pet = 0, sc = 0 }
-                        t.p = t.p + player.damage
-                        t.total = t.total + player.damage
-                        player_totals[pname] = t
-                        total_damage = total_damage + player.damage
-                    end
-                end
+                if owner and self.settings.combinepets then
+					local t = player_totals[owner] or { total = 0, p = 0, pet = 0, sc = 0 }
+					t.pet = t.pet + player.damage
+					t.total = t.total + player.damage
+					player_totals[owner] = t
+					total_damage = total_damage + player.damage
+				else
+					-- treat pet as standalone row
+					local pname = player_name
+					local t = player_totals[pname] or { total = 0, p = 0, pet = 0, sc = 0 }
+					t.pet = t.pet + player.damage
+					t.total = t.total + player.damage
+					player_totals[pname] = t
+					total_damage = total_damage + player.damage
+				end
             end
         end
     end
 
     -- Phase 2: merge SC entries
     for _, e in ipairs(sc_entries) do
-        local actor_name = nil
-        if self.db.get_name_for_id then
-            actor_name = self.db:get_name_for_id(e.actor_id)
-        end
+		local actor_name = nil
+		if self.db.get_name_for_id then
+			actor_name = self.db:get_name_for_id(e.actor_id)
+		end
 
-        if actor_name and actor_name ~= '' then
-            local t = player_totals[actor_name] or { total = 0, p = 0, pet = 0, sc = 0 }
-            t.sc = t.sc + e.damage
-            t.total = t.total + e.damage
-            player_totals[actor_name] = t
-        else
-            -- unresolved SC: place under a generic SC bucket so it doesn't become a raw key like "sc_X"
-            local fallback = ('SC(%s)'):format(tostring(e.actor_id))
-            local t = player_totals[fallback] or { total = 0, p = 0, pet = 0, sc = 0 }
-            t.sc = t.sc + e.damage
-            t.total = t.total + e.damage
-            player_totals[fallback] = t
-        end
-    end
+		if self.settings.combinesc and actor_name and actor_name ~= '' then
+			local t = player_totals[actor_name] or { total = 0, p = 0, pet = 0, sc = 0 }
+			t.sc = t.sc + e.damage
+			t.total = t.total + e.damage
+			player_totals[actor_name] = t
+		else
+			-- standalone SC row
+			local row_name
+			if actor_name and actor_name ~= '' then
+				row_name = ('SC(%s)'):format(actor_name)
+			else
+				row_name = ('SC(%s)'):format(tostring(e.actor_id))
+			end
+
+			local t = player_totals[row_name] or { total = 0, p = 0, pet = 0, sc = 0 }
+			t.sc = t.sc + e.damage
+			t.total = t.total + e.damage
+			player_totals[row_name] = t
+		end
+	end
 
     -- Phase 3: attribute pet entries using prefix matching (prefer names we already have)
-    for _, pe in ipairs(pet_entries) do
-        local owner_short = pe.owner_short
-        local matched_owner = match_owner_by_prefix(player_totals, owner_short)
+	if self.settings.combinepets then
+		for _, pe in ipairs(pet_entries) do
+			local owner_short = pe.owner_short
+			local matched_owner = match_owner_by_prefix(player_totals, owner_short)
 
-        if matched_owner then
-            local t = player_totals[matched_owner]
-            t.pet = t.pet + pe.damage
-            t.total = t.total + pe.damage
-            player_totals[matched_owner] = t
-        else
-            -- fallback: search candidates across DB (non-id keys)
-            local candidates = T{}
-            for mob, players in self.db:iter() do
-                for nm, _ in pairs(players) do
-                    if type(nm) == 'string' and not nm:match('^id_%d+$') then
-                        candidates[nm] = true
-                    end
-                end
-            end
+			if matched_owner then
+				local t = player_totals[matched_owner]
+				t.pet = t.pet + pe.damage
+				t.total = t.total + pe.damage
+				player_totals[matched_owner] = t
+			else
+				-- fallback: search candidates across DB (non-id keys)
+				local candidates = T{}
+				for mob, players in self.db:iter() do
+					for nm, _ in pairs(players) do
+						if type(nm) == 'string' and not nm:match('^id_%d+$') then
+							candidates[nm] = true
+						end
+					end
+				end
 
-            local fallback_match = nil
-            for nm, _ in pairs(candidates) do
-                if nm:lower():sub(1, #owner_short) == owner_short:lower() then
-                    fallback_match = nm
-                    break
-                end
-            end
+				local fallback_match = nil
+				for nm, _ in pairs(candidates) do
+					if nm:lower():sub(1, #owner_short) == owner_short:lower() then
+						fallback_match = nm
+						break
+					end
+				end
 
-            if fallback_match then
-                local t = player_totals[fallback_match] or { total = 0, p = 0, pet = 0, sc = 0 }
-                t.pet = t.pet + pe.damage
-                t.total = t.total + pe.damage
-                player_totals[fallback_match] = t
-            else
-                -- give up and keep the pet as its own display row (rare)
-                local t = player_totals[pe.name] or { total = 0, p = 0, pet = 0, sc = 0 }
-                t.pet = t.pet + pe.damage
-                t.total = t.total + pe.damage
-                player_totals[pe.name] = t
-            end
-        end
-    end
-
+				if fallback_match then
+					local t = player_totals[fallback_match] or { total = 0, p = 0, pet = 0, sc = 0 }
+					t.pet = t.pet + pe.damage
+					t.total = t.total + pe.damage
+					player_totals[fallback_match] = t
+				else
+					-- give up and keep the pet as its own display row (rare)
+					local t = player_totals[pe.name] or { total = 0, p = 0, pet = 0, sc = 0 }
+					t.pet = t.pet + pe.damage
+					t.total = t.total + pe.damage
+					player_totals[pe.name] = t
+				end
+			end
+		end
+	end
     -- Build sortable list
     local sortable = T{}
     for name, t in pairs(player_totals) do
@@ -289,10 +326,7 @@ end
 
 -- Updates the main display with current filter/damage/dps status
 function Display:update()
-    if not self.visible then
-        -- no need build a display while it's hidden
-        return
-    end
+    if not self.visible then return end
 
     if self.db:empty() then
         self:reset()
@@ -303,9 +337,16 @@ function Display:update()
 
     local display_table = T{}
     local player_lines = 0
-    local alli_damage = 0
 
-    -- damage_table is a sorted array of {name, totals_table}
+    local stat_mode = (self.settings.display_mode and self.settings.display_mode ~= 'damage')
+    local stat_map = nil
+    local stat_meta = nil
+
+    if stat_mode then
+        stat_map = self.db:query_stat(self.settings.display_mode) or {}
+        stat_meta = Display.stat_summaries._all_stats[self.settings.display_mode]
+    end
+
     for _, entry in ipairs(damage_table) do
         local name = entry[1]
         local totals = entry[2]
@@ -325,16 +366,60 @@ function Display:update()
                 percent = '(0%)'
             end
 
-            display_table:append(('%-16s%7d%8s %7s'):format(name, totals.total, percent, dps))
+            local stat_str = ''
+
+            if stat_mode then
+                local stat_entry = stat_map[name]
+
+                if not stat_entry then
+                    -- try lowercase match
+                    for k, v in pairs(stat_map) do
+                        if k:lower() == name:lower() then
+                            stat_entry = v
+                            break
+                        end
+                    end
+                end
+
+                if stat_entry and stat_entry[2] > 0 then
+                    local value = stat_entry[1]
+                    local samples = stat_entry[2]
+
+                    if stat_meta.category == 'range' then
+                        stat_str = ('%10s'):format(('%d~%d'):format(value, samples))
+                    elseif stat_meta.percent then
+                        stat_str = ('%10s'):format(('%.1f%%'):format(value * 100))
+                    else
+                        stat_str = ('%10s'):format(tostring(value))
+                    end
+                else
+                    stat_str = ('%10s'):format('N/A')
+                end
+            end
+
+            if stat_mode then
+                display_table:append(
+                    ('%-16s%7d%8s %7s  %s'):format(
+                        name,
+                        totals.total,
+                        percent,
+                        dps,
+                        stat_str
+                    )
+                )
+            else
+                display_table:append(
+                    ('%-16s%7d%8s %7s'):format(
+                        name,
+                        totals.total,
+                        percent,
+                        dps
+                    )
+                )
+            end
         end
 
-        alli_damage = alli_damage + totals.total
         player_lines = player_lines + 1
-    end
-
-    if self.settings.showallidps and dps_clock.clock > 0 then
-        display_table:append(('-'):rep(17))
-        display_table:append(('Alli DPS: ' .. '%7.1f'):format(alli_damage / dps_clock.clock))
     end
 
     self.text:text(self:build_scoreboard_header() .. table.concat(display_table, '\n'))
@@ -469,7 +554,7 @@ function Display:report_summary (...)
 
     -- Build lines: first the header line, then one line per player
     local lines = T{}
-    lines:append('Total Damage Breakdown -')
+    lines:append('Total Damage Breakdown - (ScoreboardX)')
 
     for _, row in ipairs(sortable) do
         local pct = 0.0
