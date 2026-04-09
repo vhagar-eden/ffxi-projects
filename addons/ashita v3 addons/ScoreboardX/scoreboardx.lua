@@ -2,7 +2,7 @@
 
 _addon.name = 'ScoreboardX'
 _addon.author = 'Suji, Vhagar'
-_addon.version = '2.0'
+_addon.version = '2.3'
 _addon.commands = {'sbx', 'scoreboardx'}
 
 require('windower.shim')
