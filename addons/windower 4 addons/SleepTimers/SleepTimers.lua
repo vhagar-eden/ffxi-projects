@@ -33,7 +33,7 @@ Settings changed by commands are saved to the config file and will remain the sa
 ]]
 
 _addon.name = 'SleepTimers'
-_addon.version = '1.34'
+_addon.version = '1.36'
 _addon.author = 'Vhagar@Eden'
 _addon.commands = {'sleeptimers','st'} 
 
@@ -89,17 +89,25 @@ local sleep_spells = {
     [259] = {name='Sleep II', duration=90},
     [463] = {name='Foe Lullaby', duration=30},
     [98]  = {name='Repose', duration=90},
+	[131] = {name='Light Shot', duration=60},
+	[584] = {name='Sheep Song', duration=60},
+	[576] = {name='Yawn', duration=90},
+	[598] = {name='Soporific', duration=90},
 }
 
 -- Overwrite rules
 local overwrite_map = {
-    ['Sleepga II']   = {'Sleepga', 'Horde Lullaby', 'Foe Lullaby', 'Sleep'},
-    ['Sleepga']      = {},
-    ['Sleep II']     = {'Sleep', 'Sleepga', 'Horde Lullaby', 'Foe Lullaby'},
-    ['Sleep']        = {},
-    ['Repose']       = {'Sleep', 'Sleepga', 'Horde Lullaby', 'Foe Lullaby'},
+    ['Sleepga II']   = {'Sleepga', 'Horde Lullaby', 'Foe Lullaby', 'Sleep', 'Light Shot', 'Sheep Song', 'Yawn', 'Soporific'},
+    ['Sleepga']      = {'Sheep Song', 'Yawn', 'Soporific'},
+    ['Sleep II']     = {'Sleep', 'Sleepga', 'Horde Lullaby', 'Foe Lullaby', 'Light Shot', 'Sheep Song', 'Yawn', 'Soporific'},
+    ['Sleep']        = {'Sheep Song', 'Yawn', 'Soporific'},
+    ['Repose']       = {'Sleep', 'Sleepga', 'Horde Lullaby', 'Foe Lullaby', 'Light Shot', 'Sheep Song', 'Yawn', 'Soporific'},
     ['Horde Lullaby']= {},
     ['Foe Lullaby']  = {},
+	['Light Shot']   = {'Sheep Song', 'Yawn', 'Soporific'},
+	['Sheep Song']   = {},
+	['Yawn']         = {},
+	['Soporific']    = {},
 }
 
 -- Helpers
@@ -240,15 +248,17 @@ local damage_categories = { [1]=true, [2]=true, [3]=true, [6]=true }
 
 -- Sleep effect “landed” messages (spells + bard songs)
 local sleep_messages = {
-    [236]=true, -- Sleep/Sleep II/Sleepga/Sleepga II/Repose targeted mob
-    [277]=true, -- Sleepga and Sleepga II AoE targets
+    [236]=true, -- Sleep/Sleep II/Sleepga/Sleepga II/Repose/BLU spells targeted mob
+    [277]=true, -- Sleepga/Sleepga II/BLU spells AoE targets
     [237]=true, -- Bard’s Lullaby single
     [278]=true, -- Bard’s Lullaby AoE
+	[127]=true, -- Light Shot landed
 }
 
 windower.register_event('action', function(act)
     if not act or type(act) ~= 'table' then return end
 
+    -- Magic sleep spells
     if act.category == 4 and sleep_spells[act.param] then
         for _, target in ipairs(act.targets or {}) do
             for _, a in ipairs(target.actions or {}) do
@@ -260,11 +270,25 @@ windower.register_event('action', function(act)
         return
     end
 
+    -- Corsair Light Shot
+    if act.category == 6 and act.param == 131 then
+        for _, target in ipairs(act.targets or {}) do
+            for _, a in ipairs(target.actions or {}) do
+                if a.message == 127 then
+                    handle_sleep_spell(act.actor_id, target.id, 131)
+                end
+            end
+        end
+        return
+    end
+
+    -- Mob acted = woke up
     if act.actor_id and tracked[act.actor_id] then
         clear_tracked(act.actor_id)
         return
     end
 
+    -- Physical damage wake
     if damage_categories[act.category] then
         for _, target in ipairs(act.targets or {}) do
             local woke = false
@@ -281,6 +305,7 @@ windower.register_event('action', function(act)
         end
     end
 
+    -- Spell damage wake
     if damaging_spells and damaging_spells[act.param] then
         for _, target in ipairs(act.targets or {}) do
             local woke = false
