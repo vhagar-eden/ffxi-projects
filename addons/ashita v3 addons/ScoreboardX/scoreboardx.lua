@@ -9,7 +9,7 @@ require('windower.shim')
 require('tables')
 require('strings')
 require('maths')
-require('logger')
+local logger = require('logger')
 require('actions')
 local file = require('files')
 config = require('config')
@@ -31,11 +31,13 @@ default_settings.visible = true
 default_settings.showfellow = true
 default_settings.UpdateFrequency = 0.5
 default_settings.combinepets = true
+default_settings.combinesc = true
 
 default_settings.display = {}
 default_settings.display.pos = {}
 default_settings.display.pos.x = 500
 default_settings.display.pos.y = 100
+default_settings.display_mode = 'damage'
 
 default_settings.display.bg = {}
 default_settings.display.bg.alpha = 200
@@ -92,20 +94,24 @@ windower.register_event('addon command', (function()
         local params = {...}
 
         if command == 'help' then
-            sb_output('ScoreboardX v' .. _addon.version .. '. Author: Suji, Vhagar')
-            sb_output('sbx help : Shows help message')
-            sb_output('sbx pos <x> <y> : Positions the scoreboard')
-            sb_output('sbx reset : Reset damage')
-            sb_output('sbx report [<target>] : Reports damage. Can take standard chatmode target options.')
-            sb_output('sbx reportstat <stat> [<player>] [<target>] : Reports the given stat. Can take standard chatmode target options. Ex: //sbx rs acc p')
-            sb_output('Valid chatmode targets are: ' .. chatmodes:concat(', '))
-            sb_output('sbx filter show  : Shows current filter settings')
-            sb_output('sbx filter add <mob1> <mob2> ... : Add mob patterns to the filter (substrings ok)')
-            sb_output('sbx filter clear : Clears mob filter')
-            sb_output('sbx visible : Toggles scoreboard visibility')
-            sb_output('sbx stat <stat> [<player>]: Shows specific damage stats. Respects filters. If player isn\'t specified, ' ..
-                  'stats for everyone are displayed. Valid stats are:')
-            sb_output(dps_db.player_stat_fields:tostring():stripchars('{}"'))
+			sb_output('ScoreboardX v' .. _addon.version .. '. Author: Suji, Vhagar')
+			sb_output('sbx help : Shows help message')
+			sb_output('sbx pos <x> <y> : Positions the scoreboard')
+			sb_output('sbx move <up|down|left|right> [amount] : Moves the scoreboard by the given amount (default 10)')
+			sb_output('sbx reset : Reset damage')
+			sb_output('sbx report [<target>] : Reports damage. Can take standard chatmode target options.')
+			sb_output('sbx reportstat <stat> [<player>] [<target>] : Reports the given stat. Can take standard chatmode target options. Ex: //sbx rs acc p')
+			sb_output('Valid chatmode targets are: ' .. chatmodes:concat(', '))
+			sb_output('sbx mode <damage|stat> : Switch display mode. Use a valid stat name to show it as a column.')
+			sb_output('sbx set combinepets <true|false> : Merge pet damage with the owner')
+			sb_output('sbx set combinesc <true|false> : Merge skillchain damage with the owner')
+			sb_output('sbx filter show  : Shows current filter settings')
+			sb_output('sbx filter add <mob1> <mob2> ... : Add mob patterns to the filter (substrings ok)')
+			sb_output('sbx filter clear : Clears mob filter')
+			sb_output('sbx visible : Toggles scoreboard visibility')
+			sb_output('sbx stat <stat> [<player>]: Shows specific damage stats. Respects filters. If player isn\'t specified, ' ..
+				  'stats for everyone are displayed. Valid stats are:')
+			sb_output(dps_db.player_stat_fields:tostring():stripchars('{}"'))
         elseif command == 'pos' then
             if params[2] then
                 local posx, posy = tonumber(params[1]), tonumber(params[2])
@@ -131,6 +137,19 @@ windower.register_event('addon command', (function()
                 end
                 settings:save()
                 sb_output("Setting 'combinepets' set to " .. tostring(settings.combinepets))
+			elseif setting == 'combinesc' then
+				if params[2] == 'true' then
+					settings.combinesc = true
+				elseif params[2] == 'false' then
+					settings.combinesc = false
+				else
+					error("Invalid value for 'combinesc'. Must be true or false.")
+					return
+				end
+
+				settings:save()
+				display:update()
+				sb_output("Setting 'combinesc' set to " .. tostring(settings.combinesc))
             elseif setting == 'numplayers' then
                 settings.numplayers = tonumber(params[2])
                 settings:save()
@@ -293,8 +312,41 @@ windower.register_event('addon command', (function()
             else
                 save()
             end
+			
+		elseif command == 'mode' then
+			local mode = params[1] and params[1]:lower()
+			if mode == 'damage' then
+				settings.display_mode = 'damage'
+			elseif dps_db.player_stat_fields:contains(mode) then
+				settings.display_mode = mode
+			else
+				error('Invalid mode.')
+				return
+			end
+
+			settings:save()
+			display:update()
+		elseif command == 'move' then
+			local direction = params[1] and params[1]:lower()
+			local amount = tonumber(params[2]) or 10
+
+			if direction == 'left' then
+				settings.display.pos.x = settings.display.pos.x - amount
+			elseif direction == 'right' then
+				settings.display.pos.x = settings.display.pos.x + amount
+			elseif direction == 'up' then
+				settings.display.pos.y = settings.display.pos.y - amount
+			elseif direction == 'down' then
+				settings.display.pos.y = settings.display.pos.y + amount
+			else
+				error('Usage: //sbx move left|right|up|down [amount]')
+				return
+			end
+
+			settings:save()
+			display:set_position(settings.display.pos.x, settings.display.pos.y)
         else
-            error('Unrecognized command. See //sbx help')
+            error('Unrecognized command. See /sbx help')
         end
     end
 end)())
@@ -373,24 +425,40 @@ function get_ally_mob_ids()
     local allies = T{}
     local party = windower.ffxi.get_party()
 
+    if not party then
+        return allies
+    end
+
     for _, member in pairs(party) do
         if type(member) == 'table' and member.mob then
-            allies:append(member.mob.id)
-            if member.mob.pet_index and member.mob.pet_index> 0 and windower.ffxi.get_mob_by_index(member.mob.pet_index) then
-                allies:append(windower.ffxi.get_mob_by_index(member.mob.pet_index).id)
+            local mob = member.mob
+
+            -- player id
+            if mob.id then
+                allies:append(mob.id)
+            end
+
+            -- pet id
+            if mob.pet_index and mob.pet_index > 0 then
+                local pet = windower.ffxi.get_mob_by_index(mob.pet_index)
+                if pet and pet.id then
+                    allies:append(pet.id)
+                end
             end
         end
     end
 
+    -- Fellow
     if settings.showfellow then
         local fellow = windower.ffxi.get_mob_by_target("ft")
-        if fellow ~= nil then
+        if fellow and fellow.id then
             allies:append(fellow.id)
         end
     end
-    
+
     return allies
 end
+
 
 
 -- Returns true if is someone (or a pet of someone) in your alliance.
@@ -465,11 +533,20 @@ function action_handler(raw_actionpacket)
                     dps_db:add_damage(target:get_name(), create_mob_name(actionpacket), main.param)
                     mark_damage()
                 elseif main.conclusion then
-                    if main.conclusion.subject == 'target' and T(main.conclusion.objects):contains('HP') and main.param ~= 0 then
-                        dps_db:add_damage(target:get_name(), create_mob_name(actionpacket), (main.conclusion.verb == 'gains' and -1 or 1)*main.param)
-                        mark_damage()
-                    end
-                end
+					if main.conclusion.subject == 'target'
+					and T(main.conclusion.objects):contains('HP')
+					and main.param ~= 0
+					and main.conclusion.verb == 'loses' then  -- ONLY damage, never heals
+
+						dps_db:add_damage(
+							target:get_name(),
+							create_mob_name(actionpacket),
+							main.param
+						)
+						mark_damage()
+					end
+				end
+
                 
                 if add and add.conclusion then
 					local actor_name = create_mob_name(actionpacket)
@@ -486,7 +563,25 @@ function action_handler(raw_actionpacket)
 					-- prefer recording it as SC damage keyed by actor id.
 					if sc_message_ids:contains(add.message_id) and add.conclusion.subject == 'target' and T(add.conclusion.objects):contains('HP') and add.param ~= 0 then
 						local amount = (add.conclusion.verb == 'gains' and -1 or 1) * add.param
-						local actor_id = actionpacket.raw.actor_id or actionpacket:get_id() -- try both places defensively
+						local actor_id = actionpacket.raw.actor_id or actionpacket:get_id()
+
+						-- If this actor is a pet and we're combining pets,
+						-- attribute SC damage to the owner instead
+						if settings.combinepets then
+							local owner_name = find_pet_owner_name(actionpacket)
+							if owner_name then
+								local party = windower.ffxi.get_party()
+								if party then
+									for _, member in pairs(party) do
+										if type(member) == 'table' and member.mob and member.mob.name == owner_name then
+											actor_id = member.mob.id
+											break
+										end
+									end
+								end
+							end
+						end
+
 						-- Record SC damage with actor ID if available. scoreboardx.lua should call add_sc_damage when we have the actor ID.
 						if actor_id and actor_id > 0 then
 							dps_db:add_sc_damage(target:get_name(), actor_id, actor_name, amount)
@@ -524,23 +619,37 @@ function action_handler(raw_actionpacket)
     end
 end
 
-ActionPacket.open_listener(action_handler)
+ActionPacket.open_listener(function(...)
+    local ok, err = pcall(action_handler, ...)
+    if not ok then
+        if logger and logger.error then
+            logger.error('[ScoreboardX] Packet error: ' .. tostring(err))
+        else
+            windower.add_to_chat(123, '[ScoreboardX] Packet error: ' .. tostring(err))
+        end
+    end
+end)
 
 function find_pet_owner_name(actionpacket)
     local pet = windower.ffxi.get_mob_by_id(actionpacket:get_id())
+    if not pet then
+        return nil -- pet doesn't exist or isn't cached yet
+    end
+
     local party = windower.ffxi.get_party()
-    
-    local name = nil
-    
+    if not party then
+        return nil
+    end
+
     for _, member in pairs(party) do
-        if type(member) == 'table' and member.mob then
-            if member.mob.pet_index and member.mob.pet_index> 0 and pet.index == member.mob.pet_index then
-                name = member.mob.name
-                break
+        if type(member) == 'table' and member.mob and member.mob.pet_index and member.mob.pet_index > 0 then
+            if pet.index and pet.index == member.mob.pet_index then
+                return member.mob.name
             end
         end
     end
-    return name
+
+    return nil
 end
 
 function create_mob_name(actionpacket)
