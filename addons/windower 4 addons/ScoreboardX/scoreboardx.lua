@@ -30,6 +30,8 @@ default_settings.visible = true
 default_settings.showfellow = true
 default_settings.UpdateFrequency = 0.5
 default_settings.combinepets = true
+default_settings.combinesc = true
+default_settings.display_mode = 'damage'
 
 default_settings.display = {}
 default_settings.display.pos = {}
@@ -88,6 +90,9 @@ windower.register_event('addon command', function()
             sb_output('sbx report [<target>] : Reports damage. Can take standard chatmode target options.')
             sb_output('sbx reportstat <stat> [<player>] [<target>] : Reports the given stat. Can take standard chatmode target options. Ex: //sbx rs acc p')
             sb_output('Valid chatmode targets are: ' .. chatmodes:concat(', '))
+			sb_output('sbx mode <damage|stat> : Switch scoreboard display mode (damage or specific stat)')
+			sb_output('sbx set combinepets <true|false> : Merge pet damage with the owner')
+			sb_output('sbx set combinesc <true|false> : Merge skillchain damage with the owner')
             sb_output('sbx filter show  : Shows current filter settings')
             sb_output('sbx filter add <mob1> <mob2> ... : Add mob patterns to the filter (substrings ok)')
             sb_output('sbx filter clear : Clears mob filter')
@@ -120,6 +125,17 @@ windower.register_event('addon command', function()
                 end
                 settings:save()
                 sb_output("Setting 'combinepets' set to " .. tostring(settings.combinepets))
+			elseif setting == 'combinesc' then
+				if params[2] == 'true' then
+					settings.combinesc = true
+				elseif params[2] == 'false' then
+					settings.combinesc = false
+				else
+					error("Invalid value for 'combinesc'. Must be true or false.")
+					return
+				end
+				settings:save()
+				sb_output("Setting 'combinesc' set to " .. tostring(settings.combinesc))
             elseif setting == 'numplayers' then
                 settings.numplayers = tonumber(params[2])
                 settings:save()
@@ -236,6 +252,35 @@ windower.register_event('addon command', function()
                 local player = params[2]
                 display:show_stat(stat, player)
             end
+		elseif command == 'mode' then
+            if not params[1] then
+                sb_output("Current mode: " .. tostring(settings.display_mode))
+                return
+            end
+
+            local mode = params[1]:lower()
+
+            -- Damage mode
+            if mode == 'damage' then
+                settings.display_mode = 'damage'
+                settings:save()
+                display:update()
+                sb_output("Display mode set to: damage")
+                return
+            end
+
+            -- Stat mode
+            if dps_db.player_stat_fields:contains(mode) then
+                settings.display_mode = mode
+                settings:save()
+                display:update()
+                sb_output("Display mode set to: " .. mode)
+                return
+            end
+
+            -- Invalid input
+            error('Invalid mode. Must be "damage" or one of: ' ..
+                  dps_db.player_stat_fields:tostring():stripchars('{}"'))
         elseif command == 'reportstat' or command == 'rs' then
             if not params[1] or not dps_db.player_stat_fields:contains(params[1]:lower()) then
                 error('Must pass a stat specifier to //sbx reportstat. Valid arguments: ' ..
@@ -352,7 +397,7 @@ local function update_dps_clock()
     end
 
         -- grace window in seconds: keep clock going this long after last real damage event
-    local grace_seconds = 8
+    local grace_seconds = 5
 
     if dps_clock:is_active() then
         if dps_clock.last_event and (now - dps_clock.last_event) <= grace_seconds then
