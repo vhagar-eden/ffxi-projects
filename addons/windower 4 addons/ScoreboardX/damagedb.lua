@@ -81,8 +81,15 @@ function DamageDB:_get_player(mob, player_name)
     end
     
     if not self.db[mob][player_name] then
-        self.db[mob][player_name] = Player:new{name = player_name}
-    end
+		local p = Player:new{name = player_name}
+
+		-- Detect skillchain entries
+		if player_name:match("^Skillchain%(") then
+			p.is_sc = true
+		end
+
+		self.db[mob][player_name] = p
+	end
     
     return self.db[mob][player_name]
 end
