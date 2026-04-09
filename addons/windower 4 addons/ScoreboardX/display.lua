@@ -108,25 +108,28 @@ function Display:build_scoreboard_header()
     local labels
     if self.db:empty() then
         labels = '\n'
+    elseif self.settings.display_mode and self.settings.display_mode ~= 'damage' and self._stat_width and self._stat_header then
+        -- use the stat width/header computed in update()
+        labels = ('%32s%7s%9s %' .. tostring(self._stat_width) .. 's\n'):format('Tot', 'Pct', 'DPS', self._stat_header)
     else
-        labels = '%32s%7s%9s\n':format('Tot', 'Pct', 'DPS')
+        labels = ('%32s%7s%9s\n'):format('Tot', 'Pct', 'DPS')
     end
 
-    local dps_status
-    if dps_clock:is_active() then
-        dps_status = 'Active'
-    else
-        dps_status = 'Paused'
-    end
+    local dps_status = dps_clock:is_active() and 'Active' or 'Paused'
 
     local dps_clock_str = ''
     if dps_clock:is_active() or dps_clock.clock > 1 then
-        dps_clock_str = ' (%s)':format(dps_clock:to_string())
+        dps_clock_str = (' (%s)'):format(dps_clock:to_string())
     end
 
-    local dps_chunk = 'DPS: %s%s':format(dps_status, dps_clock_str)
+    local dps_chunk = ('DPS: %s%s'):format(dps_status, dps_clock_str)
 
-    return '%s%s\nMobs: %-9s\n%s':format(dps_chunk, ' ':rep(29 - dps_chunk:len()) .. '//sbx help', mob_filter_str, labels)
+    return ('%s%s\nMobs: %-9s\n%s'):format(
+        dps_chunk,
+        (' '):rep(29 - dps_chunk:len()) .. '//sbx help',
+        mob_filter_str,
+        labels
+    )
 end
 
 
@@ -232,10 +235,18 @@ function Display:get_sorted_player_damage()
     -- iterate every mob and each player object for that mob
     -- accumulate into owner buckets using resolve_owner()
     for mob, players in self.db:iter() do
-        for player_name, player in pairs(players) do
-            local target_name, _kind = resolve_owner(self, player_name, player)
+		for player_name, player in pairs(players) do
 
-            local dmg = (player.damage or 0)
+			local target_name
+
+			-- Respect combinesc setting
+			if player.is_sc and not self.settings.combinesc then
+				target_name = player_name
+			else
+				target_name = select(1, resolve_owner(self, player_name, player))
+			end
+
+			local dmg = (player.damage or 0)
             if player_total_dmg[target_name] then
                 player_total_dmg[target_name] = player_total_dmg[target_name] + dmg
             else
@@ -270,6 +281,43 @@ function Display:update()
         self:reset()
         return
     end
+	
+	local mode = self.settings.display_mode or 'damage'
+	local stat_info = Display.stat_summaries._all_stats[mode]
+	local stat_data = nil
+
+	if mode ~= 'damage' and stat_info then
+		stat_data = self.db:query_stat(mode)
+	end
+	
+	-- compute a safe column width and header label for the active stat (if any)
+	self._stat_width = nil
+	self._stat_header = nil
+	if stat_data and stat_info then
+		local stat_header = stat_info.name or (self.settings.display_mode or '')
+		local stat_width = stat_header:len()
+
+		for k, pair in pairs(stat_data) do
+			if pair and pair[2] and pair[2] > 0 then
+				local value_str
+				if stat_info.category == 'range' then
+					value_str = ('%d~%d'):format(pair[1], pair[2])
+				elseif stat_info.percent then
+					value_str = ('%.2f%%'):format(pair[1] * 100)
+				else
+					value_str = tostring(pair[1])
+				end
+				if value_str:len() > stat_width then stat_width = value_str:len() end
+			end
+		end
+
+		-- small padding
+		stat_width = stat_width + 2
+
+		self._stat_width = stat_width
+		self._stat_header = stat_header
+	end
+	
     -- [CHANGED] get merged totals from the reader
     local damage_table, total_damage = self:get_sorted_player_damage()
 
@@ -277,29 +325,65 @@ function Display:update()
     local player_lines = 0
     local alli_damage = total_damage -- merged total already computed above
 
-    for k, v in pairs(damage_table) do
-        if player_lines < self.settings.numplayers then
-            local name = v[1]
-            local dmg_value = v[2]
+    for _, v in ipairs(damage_table) do
+		if player_lines < self.settings.numplayers then
+			local name = v[1]
+			local dmg_value = v[2]
 
-            local dps
-            if dps_clock.clock == 0 then
-                dps = "N/A"
-            else
-                dps = '%.2f':format(math.round(dmg_value / dps_clock.clock, 2))
-            end
+			local dps
+			if dps_clock.clock == 0 then
+				dps = "N/A"
+			else
+				dps = '%.2f':format(math.round(dmg_value / dps_clock.clock, 2))
+			end
 
-            local percent
-            if total_damage > 0 then
-                percent = '(%.1f%%)':format(100 * dmg_value / total_damage)
-            else
-                percent = '(0%)'
-            end
+			local percent
+			if total_damage > 0 then
+				percent = '(%.1f%%)':format(100 * dmg_value / total_damage)
+			else
+				percent = '(0%)'
+			end
 
-            display_table:append('%-25s%7d%8s %7s':format(name, dmg_value, percent, dps))
-            player_lines = player_lines + 1
-        end
-    end
+			if stat_data and stat_info and self._stat_width and self._stat_header then
+				local stat_str = '-'
+
+				-- direct key lookup
+				local pair = stat_data[name]
+
+				-- case-insensitive fallback if direct lookup fails
+				if not pair then
+					local lname = name:lower()
+					for k, vstat in pairs(stat_data) do
+						if k and k:lower() == lname then
+							pair = vstat
+							break
+						end
+					end
+				end
+
+				if pair and pair[2] and pair[2] > 0 then
+					if stat_info.category == 'range' then
+						stat_str = ('%d~%d'):format(pair[1], pair[2])
+					elseif stat_info.percent then
+						stat_str = ('%.2f%%'):format(pair[1] * 100)
+					else
+						stat_str = tostring(pair[1])
+					end
+				end
+
+				display_table:append(
+					('%-25s%7d%8s %7s %' .. tostring(self._stat_width) .. 's')
+					:format(name, dmg_value, percent, dps, stat_str)
+				)
+			else
+				display_table:append(
+					('%-25s%7d%8s %7s'):format(name, dmg_value, percent, dps)
+				)
+			end
+
+			player_lines = player_lines + 1
+		end
+	end
 
     if self.settings.showallidps and dps_clock.clock > 0 then
         display_table:append('-':rep(17))
@@ -446,7 +530,7 @@ function Display:report_summary (...)
     end
 
     -- Send the report: one line per entry with a header
-    local lines = T{'Total Damage Breakdown -'}
+    local lines = T{'Total Damage Breakdown - (ScoreboardX)'}
     for _, line in ipairs(elements) do
         lines:append(line)
     end
